@@ -4,17 +4,13 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import org.apache.hadoop.metrics.ContextFactory;
-import org.apache.hadoop.metrics.MetricsContext;
+import org.apache.hadoop.metrics.MetricsException;
 import org.apache.hadoop.metrics.spi.AbstractMetricsContext;
 import org.apache.hadoop.metrics.spi.OutputRecord;
-import org.apache.hadoop.metrics2.MetricsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.util.Enumeration;
-import java.util.Properties;
 
 
 /**
@@ -64,12 +60,12 @@ public class CarbonMetricsContext extends AbstractMetricsContext {
     //This is horrific, but we need to differentiate between processes when they
     //share the same hadoop-metrics.properties
     private String getMainClassName() {
-        StackTraceElement[] stack = Thread.currentThread ().getStackTrace ();
-        StackTraceElement main = stack[stack.length - 1];
-        String mainClass = main.getClassName ();
-        String[] mainClassSplit = mainClass.split("\\.");
 
-        mainClass = mainClassSplit[mainClassSplit.length - 1];
+        String mainClass = System.getProperty("sun.java.command");
+        String[] mainClassSplit = mainClass.split("\\.");
+        mainClassSplit = mainClassSplit[mainClassSplit.length - 1].split(" ");
+
+        mainClass = mainClassSplit[0];
 
         return mainClass;
     }
@@ -109,7 +105,7 @@ public class CarbonMetricsContext extends AbstractMetricsContext {
             logger.info("AMQP Connection to "+addr+" established");
 
         } catch (IOException io) {
-            throw new MetricsException("Failed to start sink", io);
+            throw new MetricsException("Failed to start sink");
         }
     }
 
