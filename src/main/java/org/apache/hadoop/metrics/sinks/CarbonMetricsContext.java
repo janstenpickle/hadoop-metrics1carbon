@@ -35,6 +35,7 @@ public class CarbonMetricsContext extends AbstractMetricsContext {
     private static final String ROUTING_KEY = "amqp.routing.key";
     private static final String VHOST_KEY = "amqp.vhost";
     private static final String PREFIX_KEY = "prefix";
+    private static final String ZEROS_AS_NULL_KEY = "zeros.as.null";
 
 
 
@@ -45,6 +46,7 @@ public class CarbonMetricsContext extends AbstractMetricsContext {
     private String exchangeName;
     private String prefix;
     private String mainClass;
+    private Boolean zerosAsNull;
 
     public CarbonMetricsContext() {
         super();
@@ -87,6 +89,7 @@ public class CarbonMetricsContext extends AbstractMetricsContext {
             routingKey = getAttribute(ROUTING_KEY, "#");
             String vhost = getAttribute(VHOST_KEY, "/");
             prefix = getAttribute(PREFIX_KEY, "hadoop");
+            zerosAsNull = Boolean.parseBoolean(getAttribute(ZEROS_AS_NULL_KEY, "true"));
 
             factory.setHost(addr);
             factory.setPort(port);
@@ -121,10 +124,14 @@ public class CarbonMetricsContext extends AbstractMetricsContext {
 
         for (String metricName : outputRecord.getMetricNames()) {
             float value = outputRecord.getMetric(metricName).floatValue();
-            value = Math.round(value * 1000) / 1000;
 
-            message.append(prefix + "." +mainClass+ "." + context + "." + record + "." + metricName + " " + value + " " + timestamp + "\n");
-            logger.debug(metricName + " value: " + outputRecord.getMetric(metricName).toString());
+            if (value != 0 && zerosAsNull) {
+
+                value = Math.round(value * 1000) / 1000;
+
+                message.append(prefix + "." +mainClass+ "." + context + "." + record + "." + metricName + " " + value + " " + timestamp + "\n");
+                logger.debug(metricName + " value: " + outputRecord.getMetric(metricName).toString());
+            }
         }
 
         logger.debug("Publishing metric " + message);
